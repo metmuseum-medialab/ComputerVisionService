@@ -5,8 +5,8 @@ function CascadeIdentifier(){
 
 
 	var Indentifier = {
-		var cascade_dir : "/usr/local/share/OpenCV/";
-		var cascades : {
+		cascade_dir : "/usr/local/share/OpenCV/",
+		cascades : {
 			eyeglasses : "haarcascades/haarcascade_eye_tree_eyeglasses.xml",
 			eye : "haarcascades/haarcascade_eye.xml",
 			frontalface_alt2 : "haarcascades/haarcascade_frontalface_alt2.xml",
@@ -29,45 +29,63 @@ function CascadeIdentifier(){
 			mcs_righteye_2splits : "haarcascades/haarcascade_righteye_2splits.xml",
 			smile : "haarcascades/haarcascade_smile.xml",
 			upperbody : "haarcascades/haarcascade_upperbody.xml"
-		}
+		},
 
 
 		//var img_file = "/usr/local/share/OpenCV/samples/c/lena.jpg";
-		var test_img_file : "/home/metmuseum/projects/facerecog/vilniusSmiling.jpg";
+		test_img_file : "/home/metmuseum/projects/facerecog/vilniusSmiling.jpg",
 
-		var process : require('child_process');
+		python_cmd  : "/usr/bin/python /home/metmuseum/projects/ComputerVisionService/cascade_detect.py ",
 
-		var python_cmd  : "/usr/bin/python /home/metmuseum/projects/ComputerVisionService/cascade_detect.py "
 
+
+		parse_stdout : function(stdout){	
+			var results = [];
+			stdout = stdout.trim();
+			if(stdout == "false"){
+				return results;
+			}
+			var lines = stdout.split("\n");
+			while(lines.length > 0){
+				var line = lines.shift();
+				var s = line.split(":");
+				var result = {x: s[0], y : s[1] , w : s[2], h : s[3]};
+				results.push(result);
+			}
+			return results;
+
+
+		},
 
 		match_all_cascades : function (image_file, callback){
 			// first make sure this is a legit image, not a comman  (hack!)
 			var num_cascades = Object.keys(this.cascades).length;
 			var complete_cascades = 0;
 			var results = {};
+			var realthis = this;
 			for(var key in this.cascades ){
 				//var cascade_file = "/usr/local/share/OpenCV/haarcascades/haarcascade_eye.xml";
 
 				(function(_key){
-					var cascade_file = this.cascade_dir + this.cascades[_key];
+					var cascade_file = realthis.cascade_dir + realthis.cascades[_key];
 
-					var cmd = this.python_cmd + " " + image_file + "  " + cascade_file;
+					var cmd = realthis.python_cmd + " " + image_file + "  " + cascade_file;
 
 					var ls = process.exec(cmd, function (error, stdout, stderr) {
 						   if (error) {
+						   	/*
 						     console.log(error.stack);
 						     console.log('Error code: '+error.code);
 						     console.log('Signal received: '+error.signal);
+						     */
 						   }
-						   console.log('stdout: '  + _key +' : '+ stdout);
-						   console.log('stderr: ' + stderr);
+						   results[_key] = realthis.parse_stdout(stdout);
 						 });
 						 ls.on('exit', function (code) {
-						   console.log('Child process exited with exit code '+code);
 						   complete_cascades++;
 						   if(complete_cascades == num_cascades){
-						   		console.log("done with all cascades, returning");
 						   		callback(results);
+						   }else{
 						   }
 						 });
 				}(key));
