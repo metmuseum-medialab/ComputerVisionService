@@ -22,11 +22,14 @@ faces = theCascade.detectMultiScale(
     flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 )
 
-print "Found {0} Matches!".format(len(faces))
+#print "Found {0} Matches!".format(len(faces))
+
+if len(faces) == 0:
+	print "false"
 
 # Draw a rectangle around the faces
 for (x, y, w, h) in faces:
-	print "{0},{1}:{2},{3}".format(x,y,w,h)
+	print "{0}:{1}:{2}:{3}".format(x,y,w,h)
 #    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
 #cv2.imshow("Faces found", image)
