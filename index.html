@@ -1,0 +1,58 @@
+<html>
+<head>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<script>
+$(document).ready(function() {
+	$(".clicker").click(function(){
+		var url=$("#urlvalue").val();
+		var path = "/?imageurl="+encodeURIComponent(url);
+		$("#svgimage").attr("xlink:href", url);
+		$.ajax(
+			path,
+			{
+				success : function(data, status, jqXHR){
+					console.log("success");
+					console.log(data);
+					$.each(data, function(key, values){
+						console.log(key);
+						console.log(values);
+						if(key != "_links"){
+							$.each(values, function(key2, value){
+								console.log(value);
+								var rectangle = $("<rect class='"+key+"' "+
+									" x='"+value.x+
+									"' y='"+value.y+
+									"' width='"+value.w+
+									"' height='"+value.h+"' " +
+									" style='fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9' />");
+								$("#svgcanvas").append(rectangle);
+							});
+						}
+					});
+					$("body").html($("body").html());
+				},
+				error : function(jqHXR, status, error){
+					console.log("error");
+					console.log(error);
+				},	
+
+			}
+			);
+	});
+});
+</script>
+</head>
+<body>
+<div class="urlinput"><input id="urlvalue" type="text" size="40"/><span class="clicker">find things</span></div>
+<div class="imageholder">
+<svg id="svgcanvas" width="493" height="346" version="1.1"
+     xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
+	<image id="svgimage" xlink:href="http://images.metmuseum.org/CRDImages/an/web-large/1999,325,018.jpg" x="0" y="0" height="396" width="493" />
+</svg>
+</div>
+
+<div class="controls">controls</div>
+
+</body>
+</html>
