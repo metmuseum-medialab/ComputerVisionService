@@ -20,15 +20,9 @@ $(document).ready(function() {
 		$(".clicker").click(function(){
 			var url=$("#urlvalue").val();
 			var path = "/?imageurl="+encodeURIComponent(url);
-			console.log("clicked");
-			console.log(_paper);
 
 			setImageInPaper(url, _paper, function(queueImage, _paper){
-				console.log("calling cascader");
-				console.log(_paper);
 				callCascader(path, function(data){
-					console.log("placing identifiers");
-					console.log(_paper);
 					placeIdentifiers(data, _paper);
 				});
 			});
@@ -41,13 +35,20 @@ $(document).ready(function() {
 
 	function placeIdentifiers(data, _paper){
 		console.log("placing identifiers");
-		$.each(data, function(key, values){
-			console.log(key);
+
+		for(key in data){
+			values = data[key];
 			if(key != "_links"){
-				$.each(values, function(key2, value){
-					console.log(value);
-					console.log(paper);
-					var rect = _paper.rect(value.x, value.y, value.width, value.height);
+				for(key2 in values){
+					value = values[key2];
+
+					var scaledXY = ScaleImage(value.x, value.y, 400, 600, true);
+					var scaledWH = ScaleImage(value.w, value.h, 400, 600, true);
+console.log(value);
+console.log(scaledXY);
+console.log(scaledWH);
+//var rect = _paper.rect(value.x, value.y, value.w, value.h);
+					var rect = _paper.rect(scaledXY.width, scaledXY.height, scaledWH.width, scaledWH.height);
 
 					rect.attr("stroke","#f00");
 					rect.attr("stroke-width",1);
@@ -55,10 +56,9 @@ $(document).ready(function() {
 					rect.attr("fill-opacity",".2");
 					rect.toFront();
 					rect.show();
-					console.log(rect);
-				});
+				}
 			}
-		});
+		}
 	}
 
 	function callCascader(url, callback){
@@ -95,10 +95,6 @@ function setupCanvas(callback){
 
 function setImageInPaper(url, _paper, callback){
 	_paper.clear();
-
-
-
-
 	queueObject = {};
 
 	console.log("loading " + url);
@@ -111,12 +107,11 @@ function setImageInPaper(url, _paper, callback){
 	queueObject.image = theimage;
 	queueObject.imageObj = new Image();
 	queueObject.imageObj.onload = function(){
-		console.log("loaded");
+		queueObject.origWidth = queueObject.width;
+		queueObject.origHeight = queueObject.height;
+
 		var result = ScaleImage(queueObject.imageObj.width, queueObject.imageObj.height, 400, 600, true);
-		console.log(result);
-		console.log("paper is");
-		console.log(paper);
-	//	queueObject.paperimage = _paper.image(queueObject.image, 0,0, result.width, result.height);
+		queueObject.paperimage = _paper.image(queueObject.image, 0,0, result.width, result.height);
 		queueObject.width = result.width;
 		queueObject.height = result.height;
 		callback(queueObject, _paper);
