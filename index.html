@@ -3,8 +3,28 @@
 <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
 <script type="text/javascript" src="js/raphael-min.js"></script>
+<script type="text/javascript" src="js/masonry.pkgd.min.js"></script>
+<style>
+.item { width: 25%;
+	border: 1px solid black;
+	margin: 5px;
+	padding: 5px;
+	}
+.item.w1 { width: 20%; }
+.item.w2 { width: 50%; }
+.item.w3 { width: 70%; }
+.item.w4 { width: 100%; }
+</style>
 <script>
 $(document).ready(function() {
+
+
+	var container = document.querySelector('#maincontainer');
+	var msnry = new Masonry( container, {
+	  // options
+	  columnWidth: 150,
+	  itemSelector: '.item'
+	});
 
 	var paper;
 
@@ -20,10 +40,10 @@ $(document).ready(function() {
 		$(".clicker").click(function(){
 			var url=$("#urlvalue").val();
 			var path = "/?imageurl="+encodeURIComponent(url);
-
-			setImageInPaper(url, _paper, function(queueImage, _paper){
+			setImageInPaper(url, _paper, function(queueImage, morepaper){
+				console.log(morepaper.scaleFactor);
 				callCascader(path, function(data){
-					placeIdentifiers(data, _paper);
+					placeIdentifiers(data, morepaper, morepaper.scaleFactor);
 				});
 			});
 		});
@@ -33,22 +53,29 @@ $(document).ready(function() {
 		setImageInPaper(initialImageUrl, _paper, callback);
 	}
 
-	function placeIdentifiers(data, _paper){
+	function placeIdentifiers(data, _paper, scaleFactor){
+		$(".controls").empty();
 		console.log("placing identifiers");
-
+		var _scaleFactor = scaleFactor;
 		for(key in data){
 			values = data[key];
+			num_matches = values.length;
+			var idname = "controlspan" + key;
+			var checkid = "controlcheck" + key;
+			if(num_matches > 0){
+				var control = $("<span id='"+idname+"' class='control'>"+key+" ("+num_matches+")</span>");
+				var controlCheck = $("<input id='"+checkid+"' type='checkbox' />");
+				$(".controls").append(controlCheck).append(control).append("<BR>");
+			}
 			if(key != "_links"){
 				for(key2 in values){
 					value = values[key2];
-
-					var scaledXY = ScaleImage(value.x, value.y, 400, 600, true);
-					var scaledWH = ScaleImage(value.w, value.h, 400, 600, true);
-console.log(value);
-console.log(scaledXY);
-console.log(scaledWH);
-//var rect = _paper.rect(value.x, value.y, value.w, value.h);
-					var rect = _paper.rect(scaledXY.width, scaledXY.height, scaledWH.width, scaledWH.height);
+					var x = value.x * _scaleFactor.scaleX;
+					var y = value.y * _scaleFactor.scaleY;
+					var w = value.w * _scaleFactor.scaleX;
+					var h = value.h * _scaleFactor.scaleY;
+					//var rect = _paper.rect(value.x, value.y, value.w, value.h);
+					var rect = _paper.rect(x, y, w, h);
 
 					rect.attr("stroke","#f00");
 					rect.attr("stroke-width",1);
@@ -56,13 +83,29 @@ console.log(scaledWH);
 					rect.attr("fill-opacity",".2");
 					rect.toFront();
 					rect.show();
+					(function(_rectid, thepaper, _checkid){
+						console.log("in anon");
+						$(document).on("change", "#"+_checkid, function(){
+							console.log("clicked" + _rectid);
+							var _rect= thepaper.getById(_rectid);
+							console.log(_rect);
+							if($("#"+_checkid).is(':checked') ){
+								console.log("showing");
+								_rect.show();
+								_rect.toFront();
+							}else{
+								console.log("hiding");
+								_rect.hide();
+							}
+						});
+					})(rect.id, _paper, checkid);
 				}
 			}
 		}
 	}
 
 	function callCascader(url, callback){
-		console.log("calling url");
+		console.log("calling cascader url" + url);
 		$.ajax(
 			url,
 			{
@@ -97,8 +140,6 @@ function setImageInPaper(url, _paper, callback){
 	_paper.clear();
 	queueObject = {};
 
-	console.log("loading " + url);
-
 	data = {image: url};
 	queueObject.data= data;
 
@@ -114,7 +155,8 @@ function setImageInPaper(url, _paper, callback){
 		queueObject.paperimage = _paper.image(queueObject.image, 0,0, result.width, result.height);
 		queueObject.width = result.width;
 		queueObject.height = result.height;
-		callback(queueObject, _paper);
+		_paper.scaleFactor = result;
+		callback(queueObject, _paper, result);
 
 	}
 	queueObject.imageObj.src = queueObject.image;
@@ -139,6 +181,9 @@ function setImageInPaper(url, _paper, callback){
     var scaleX2 = (srcwidth * targetheight) / srcheight;
     var scaleY2 = targetheight;
 
+		var scaleX;
+		var scaleY;
+
     // now figure out which one we should use
     var fScaleOnWidth = (scaleX2 > targetwidth);
     if (fScaleOnWidth) {
@@ -158,6 +203,8 @@ function setImageInPaper(url, _paper, callback){
         result.height = Math.floor(scaleY2);
         result.fScaleToTargetWidth = false;
     }
+		result.scaleX = result.width / srcwidth;
+		result.scaleY = result.height / srcheight;
     result.targetleft = Math.floor((targetwidth - result.width) / 2);
     result.targettop = Math.floor((targetheight - result.height) / 2);
 
@@ -169,10 +216,12 @@ function setImageInPaper(url, _paper, callback){
 </script>
 </head>
 <body>
-<div class="urlinput"><input id="urlvalue" type="text" size="40"/><span class="clicker">find stuff!</span></div>
-<div id="imageholder"></div>
-
-<div class="controls">controls</div>
-
+	<div id="maincontainer">
+		<div class="urlinput item w4"><input id="urlvalue" type="text" size="120"/><span class="clicker">find stuff!</span></div>
+		<div class="item w2">
+			<div id="imageholder"></div>
+		</div>
+		<div class="controls item w1">controls</div>
+</div>
 </body>
 </html>
