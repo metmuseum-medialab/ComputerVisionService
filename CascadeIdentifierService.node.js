@@ -3,7 +3,6 @@ console.log("starting");
 
 // testing image : http://images.metmuseum.org/CRDImages/an/web-large/1999,325,018.jpg
 
-var url = require('url');
 var fs = require("fs");
 var request = require("request");
 var urlparser = require("url");
@@ -34,24 +33,34 @@ var download = function(uri, filename, callback){
 
 
 
-server.route('*', {  
+server.route('*', {
 	GET : function(req, res){
-    var url_parts = url.parse(req.url, true);
     var parsed = urlparser.parse(req.url, true)
 
-    var query = url_parts.query;
+    var query = parsed.query;
     var imageUrl = query.imageurl;
     var results = {foo : imageUrl};
     var tempname = "tmp"+Date.now()+ Math.random();
 
-		if(req.url.match(/index\.html/i)){
+		if(req.url.match(/index\.html/i) || req.url.match(/raphael-min\.js/)){
 			if(!query.action){
 			  // this is doing it client-side
 			  sendFile(parsed.pathname, query, res);
 			  return;
 			}
 		}
- 
+
+    if(req.url.match(/^\/proxy\//)){
+			console.log("calling proxy");
+      var split = req.url.split("/");
+      split.shift(); split.shift();
+      var theurl = split.join("/");
+			console.log("url is " + theurl);
+      var proxy = require("./classes/proxy/proxy.js").ProxyManager();
+      var result = proxy.callUrlNoCallback(theurl, req, res);
+
+      return;
+    }
 
 
 		console.log("getting identify");
