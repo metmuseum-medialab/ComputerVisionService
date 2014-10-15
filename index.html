@@ -19,197 +19,282 @@
 $(document).ready(function() {
 
 
-	var container = document.querySelector('#maincontainer');
-	var msnry = new Masonry( container, {
-	  // options
-	  columnWidth: 150,
-	  itemSelector: '.item'
-	});
-
-	var paper;
-
-	var initialImageUrl = "http://images.metmuseum.org/CRDImages/es/web-large/DP105328.jpg";
-
-	setupCanvas(function(paper){
-		setupClickables(paper);
-		setupStartingImage(paper, function(){console.log("starting image set")});
-	});
+	var pageController = {
+		container : null,
+		msnry : null,
+		paper : null,
+		foo: "bar",
+		initialImageUrl : "http://images.metmuseum.org/CRDImages/ep/web-large/DP164836.jpg",
 
 
-	function setupClickables(_paper){
-		$(".clicker").click(function(){
-			var url=$("#urlvalue").val();
-			var path = "/?imageurl="+encodeURIComponent(url);
-			setImageInPaper(url, _paper, function(queueImage, morepaper){
-				console.log(morepaper.scaleFactor);
-				callCascader(path, function(data){
-					placeIdentifiers(data, morepaper, morepaper.scaleFactor);
+		init : function(){
+			console.log(this.initialImageUrl);
+			this.container = document.querySelector('#maincontainer');
+			this.msnry = new Masonry( this.container, {
+				// options
+				columnWidth: 150,
+				itemSelector: '.item'
+			});
+
+		},
+
+
+		startIt : function(){
+			var realthis = this;
+			console.log(this.initialImageUrl);
+
+			this.setupCanvas(function(){
+				console.log("setup canvas");
+				console.log(realthis.paper);
+
+				realthis.setupClickables();
+				realthis.setupStartingImage(function(){console.log("starting image set");
+
+				$(document).on("click",".testcheck", function(){
+					var i = 1;
+					while(i < 25){
+						var _rect= realthis.paper.getById(i);
+						console.log("checked");
+						console.log(_rect);
+						_rect.hide();
+						i++;
+					}
+
+					return true;
 				});
 			});
-		});
-	}
 
-	function setupStartingImage(_paper, callback){
-		setImageInPaper(initialImageUrl, _paper, callback);
-	}
+		},
 
-	function placeIdentifiers(data, _paper, scaleFactor){
-		$(".controls").empty();
-		console.log("placing identifiers");
-		var _scaleFactor = scaleFactor;
-		for(key in data){
-			values = data[key];
-			num_matches = values.length;
-			var idname = "controlspan" + key;
-			var checkid = "controlcheck" + key;
-			if(num_matches > 0){
-				var control = $("<span id='"+idname+"' class='control'>"+key+" ("+num_matches+")</span>");
-				var controlCheck = $("<input id='"+checkid+"' type='checkbox' />");
-				$(".controls").append(controlCheck).append(control).append("<BR>");
-			}
-			if(key != "_links"){
-				for(key2 in values){
-					value = values[key2];
-					var x = value.x * _scaleFactor.scaleX;
-					var y = value.y * _scaleFactor.scaleY;
-					var w = value.w * _scaleFactor.scaleX;
-					var h = value.h * _scaleFactor.scaleY;
-					//var rect = _paper.rect(value.x, value.y, value.w, value.h);
-					var rect = _paper.rect(x, y, w, h);
 
-					rect.attr("stroke","#f00");
-					rect.attr("stroke-width",1);
-					rect.attr("fill", "#5f5");
-					rect.attr("fill-opacity",".2");
-					rect.toFront();
-					rect.show();
-					(function(_rectid, thepaper, _checkid){
-						console.log("in anon");
-						$(document).on("change", "#"+_checkid, function(){
-							console.log("clicked" + _rectid);
-							var _rect= thepaper.getById(_rectid);
-							console.log(_rect);
-							if($("#"+_checkid).is(':checked') ){
-								console.log("showing");
-								_rect.show();
-								_rect.toFront();
-							}else{
-								console.log("hiding");
-								_rect.hide();
-							}
-						});
-					})(rect.id, _paper, checkid);
+		setupCanvas : function(callback){
+			var realthis = this;
+			Raphael("imageholder", 400, 600, function(context){
+				realthis.paper = this;
+				console.log(realthis.paper);
+				callback();
+			});
+		},
+
+
+
+
+		setupClickables : function(){
+			var realthis = this;
+			$(".clicker").click(function(){
+				var url=$("#urlvalue").val();
+				var path = "/?imageurl="+encodeURIComponent(url);
+				realthis.setImageInPaper(url, function(queueImage){
+					console.log(realthis.paper.scaleFactor);
+					realthis.callCascader(path, function(data){
+						realthis.placeIdentifiers(data, ralthis.paper.scaleFactor);
+					});
+				});
+			});
+		},
+
+ 		setupStartingImage : function(callback){
+			var path = "/?imageurl="+encodeURIComponent(this.initialImageUrl);
+			var realthis = this;
+			this.setImageInPaper(this.initialImageUrl, function(queueImage){
+				console.log(realthis.paper.scaleFactor);
+				realthis.callCascader(path, function(data){
+					realthis.placeIdentifiers(data, realthis.paper.scaleFactor);
+				});
+			});
+			callback();
+		},
+
+
+	 	placeIdentifiers : function(data, scaleFactor){
+			$(".controls").empty();
+			console.log("placing identifiers");
+			var _scaleFactor = scaleFactor;
+			var realthis = this;
+			var rects = {};
+			var checkids = [];
+			for(key in data){
+
+				var values = data[key];
+				var num_matches = values.length;
+				var idname = "controlspan" + key;
+				var checkid = "controlcheck" + key;
+				checkids.push(checkid);
+				rects[checkid] = [];
+				if(num_matches > 0){
+					var control = $("<span id='"+idname+"' class='control'>"+key+" ("+num_matches+")</span>");
+					var controlCheck = $("<input id='"+checkid+"' type='checkbox' />");
+					$(".controls").append(controlCheck).append(control).append("<BR>");
+				}
+				if(key != "_links"){
+//				if(key == "smile"){
+					for(key2 in values){
+						var value = values[key2];
+						var x = value.x * _scaleFactor.scaleX;
+						var y = value.y * _scaleFactor.scaleY;
+						var w = value.w * _scaleFactor.scaleX;
+						var h = value.h * _scaleFactor.scaleY;
+						//var rect = _paper.rect(value.x, value.y, value.w, value.h);
+						var rect = realthis.paper.rect(x, y, w, h);
+
+						rect.attr("stroke","#f00");
+						rect.attr("stroke-width",1);
+						rect.attr("fill", "#5f5");
+						rect.attr("fill-opacity",".2");
+						rect.toFront();
+						rect.show();
+						rects[checkid].push(rect);
+					}
 				}
 			}
-		}
-	}
-
-	function callCascader(url, callback){
-		console.log("calling cascader url" + url);
-		$.ajax(
-			url,
-			{
-				success : function(data, status, jqXHR){
-					console.log("success");
-					console.log(data);
-					callback(data);
-					$("body").html($("body").html());
-				},
-				error : function(jqHXR, status, error){
-					console.log("error");
-					console.log(error);
-				},
+			for(checkidi in checkids){
+				var checkid = checkids[checkidi];
+				for(recti in rects[checkid]){
+					var rectx = rects[checkid][recti];
+					realthis.attachRectToController(rectx.id, checkid);
+				}
 
 			}
-		);
+		},
 
-	}
+		attachRectToController : function (rectid, checkid){
+			var realthis = this;
+			console.log("Attaching " + rectid + " to  " + checkid);
+			$(document).on("change", "#"+checkid, function(){
+				console.log("checked");
+				var _rect= realthis.paper.getById(rectid);
+				if($("#"+checkid).is(':checked') ){
+					console.log("showing");
+					console.log(_rect);
+					_rect.show();
+					_rect.toFront();
+				}else{
+					console.log("hiding");
+					console.log(_rect);
+					_rect.hide();
+				}
+			});
+
+		},
+
+		callCascader : function(url, callback){
+			console.log("calling cascader url" + url);
+			$.ajax(
+				url,
+				{
+					success : function(data, status, jqXHR){
+						console.log("success");
+						console.log(data);
+						callback(data);
+						$("body").html($("body").html());
+					},
+					error : function(jqHXR, status, error){
+						console.log("error");
+						console.log(error);
+					},
+
+				}
+			);
+
+		},
+
+
+
+
+
+		setImageInPaper : function(url, callback){
+			this.paper.clear();
+			var queueObject = {};
+
+			var data = {image: url};
+			queueObject.data= data;
+			var realthis = this;
+			var theimage= data.image;
+
+			queueObject.image = theimage;
+			queueObject.imageObj = new Image();
+			queueObject.imageObj.onload = function(){
+				queueObject.origWidth = queueObject.width;
+				queueObject.origHeight = queueObject.height;
+
+				var result = realthis.ScaleImage(queueObject.imageObj.width, queueObject.imageObj.height, 400, 600, true);
+				queueObject.paperimage = realthis.paper.image(queueObject.image, 0,0, result.width, result.height);
+				queueObject.width = result.width;
+				queueObject.height = result.height;
+				realthis.paper.scaleFactor = result;
+				callback(queueObject, result);
+			}
+			queueObject.imageObj.src = queueObject.image;
+		},
+
+
+
+		ScaleImage : function(srcwidth, srcheight, targetwidth, targetheight, fLetterBox) {
+
+			var result = { width: 0, height: 0, fScaleToTargetWidth: true };
+
+			if ((srcwidth <= 0) || (srcheight <= 0) || (targetwidth <= 0) || (targetheight <= 0)) {
+					return result;
+			}
+
+			// scale to the target width
+			var scaleX1 = targetwidth;
+			var scaleY1 = (srcheight * targetwidth) / srcwidth;
+
+			// scale to the target height
+			var scaleX2 = (srcwidth * targetheight) / srcheight;
+			var scaleY2 = targetheight;
+
+			var scaleX;
+			var scaleY;
+
+			// now figure out which one we should use
+			var fScaleOnWidth = (scaleX2 > targetwidth);
+			if (fScaleOnWidth) {
+					fScaleOnWidth = fLetterBox;
+			}
+			else {
+				fScaleOnWidth = !fLetterBox;
+			}
+
+			if (fScaleOnWidth) {
+					result.width = Math.floor(scaleX1);
+					result.height = Math.floor(scaleY1);
+					result.fScaleToTargetWidth = true;
+			}
+			else {
+					result.width = Math.floor(scaleX2);
+					result.height = Math.floor(scaleY2);
+					result.fScaleToTargetWidth = false;
+			}
+			result.scaleX = result.width / srcwidth;
+			result.scaleY = result.height / srcheight;
+			result.targetleft = Math.floor((targetwidth - result.width) / 2);
+			result.targettop = Math.floor((targetheight - result.height) / 2);
+
+			return result;
+		}
+
+
+
+
+
+	};
+
+
+
+
+//	var pageController = new PageController();
+	pageController.init();
+	pageController.startIt();
+
+
+
 
 });
 
 
-function setupCanvas(callback){
-	Raphael("imageholder", 400, 600, function(context){
-		paper = this;
-		callback(paper);
-	});
-}
 
-
-function setImageInPaper(url, _paper, callback){
-	_paper.clear();
-	queueObject = {};
-
-	data = {image: url};
-	queueObject.data= data;
-
-	var theimage= data.image;
-
-	queueObject.image = theimage;
-	queueObject.imageObj = new Image();
-	queueObject.imageObj.onload = function(){
-		queueObject.origWidth = queueObject.width;
-		queueObject.origHeight = queueObject.height;
-
-		var result = ScaleImage(queueObject.imageObj.width, queueObject.imageObj.height, 400, 600, true);
-		queueObject.paperimage = _paper.image(queueObject.image, 0,0, result.width, result.height);
-		queueObject.width = result.width;
-		queueObject.height = result.height;
-		_paper.scaleFactor = result;
-		callback(queueObject, _paper, result);
-
-	}
-	queueObject.imageObj.src = queueObject.image;
-
-}
-
-
-
-  function ScaleImage(srcwidth, srcheight, targetwidth, targetheight, fLetterBox) {
-
-    var result = { width: 0, height: 0, fScaleToTargetWidth: true };
-
-    if ((srcwidth <= 0) || (srcheight <= 0) || (targetwidth <= 0) || (targetheight <= 0)) {
-        return result;
-    }
-
-    // scale to the target width
-    var scaleX1 = targetwidth;
-    var scaleY1 = (srcheight * targetwidth) / srcwidth;
-
-    // scale to the target height
-    var scaleX2 = (srcwidth * targetheight) / srcheight;
-    var scaleY2 = targetheight;
-
-		var scaleX;
-		var scaleY;
-
-    // now figure out which one we should use
-    var fScaleOnWidth = (scaleX2 > targetwidth);
-    if (fScaleOnWidth) {
-        fScaleOnWidth = fLetterBox;
-    }
-    else {
-       fScaleOnWidth = !fLetterBox;
-    }
-
-    if (fScaleOnWidth) {
-        result.width = Math.floor(scaleX1);
-        result.height = Math.floor(scaleY1);
-        result.fScaleToTargetWidth = true;
-    }
-    else {
-        result.width = Math.floor(scaleX2);
-        result.height = Math.floor(scaleY2);
-        result.fScaleToTargetWidth = false;
-    }
-		result.scaleX = result.width / srcwidth;
-		result.scaleY = result.height / srcheight;
-    result.targetleft = Math.floor((targetwidth - result.width) / 2);
-    result.targettop = Math.floor((targetheight - result.height) / 2);
-
-    return result;
-  }
 
 
 
@@ -217,6 +302,7 @@ function setImageInPaper(url, _paper, callback){
 </head>
 <body>
 	<div id="maincontainer">
+		<div class="testcheck item w4">clickme</div>
 		<div class="urlinput item w4"><input id="urlvalue" type="text" size="120"/><span class="clicker">find stuff!</span></div>
 		<div class="item w2">
 			<div id="imageholder"></div>
