@@ -28,7 +28,6 @@ $(document).ready(function() {
 
 
 		init : function(){
-			console.log(this.initialImageUrl);
 			this.container = document.querySelector('#maincontainer');
 			this.msnry = new Masonry( this.container, {
 				// options
@@ -41,29 +40,12 @@ $(document).ready(function() {
 
 		startIt : function(){
 			var realthis = this;
-			console.log(this.initialImageUrl);
 
 			this.setupCanvas(function(){
-				console.log("setup canvas");
-				console.log(realthis.paper);
-
 				realthis.setupClickables();
-				realthis.setupStartingImage(function(){console.log("starting image set");
-
-				$(document).on("click",".testcheck", function(){
-					var i = 1;
-					while(i < 25){
-						var _rect= realthis.paper.getById(i);
-						console.log("checked");
-						console.log(_rect);
-						_rect.hide();
-						i++;
-					}
-
-					return true;
+				realthis.setupStartingImage(function(){
 				});
 			});
-
 		},
 
 
@@ -108,7 +90,6 @@ $(document).ready(function() {
 
 	 	placeIdentifiers : function(data, scaleFactor){
 			$(".controls").empty();
-			console.log("placing identifiers");
 			var _scaleFactor = scaleFactor;
 			var realthis = this;
 			var rects = {};
@@ -159,18 +140,12 @@ $(document).ready(function() {
 
 		attachRectToController : function (rectid, checkid){
 			var realthis = this;
-			console.log("Attaching " + rectid + " to  " + checkid);
 			$(document).on("change", "#"+checkid, function(){
-				console.log("checked");
 				var _rect= realthis.paper.getById(rectid);
 				if($("#"+checkid).is(':checked') ){
-					console.log("showing");
-					console.log(_rect);
 					_rect.show();
 					_rect.toFront();
 				}else{
-					console.log("hiding");
-					console.log(_rect);
 					_rect.hide();
 				}
 			});
@@ -178,15 +153,11 @@ $(document).ready(function() {
 		},
 
 		callCascader : function(url, callback){
-			console.log("calling cascader url" + url);
 			$.ajax(
 				url,
 				{
 					success : function(data, status, jqXHR){
-						console.log("success");
-						console.log(data);
 						callback(data);
-						$("body").html($("body").html());
 					},
 					error : function(jqHXR, status, error){
 						console.log("error");
@@ -302,7 +273,6 @@ $(document).ready(function() {
 </head>
 <body>
 	<div id="maincontainer">
-		<div class="testcheck item w4">clickme</div>
 		<div class="urlinput item w4"><input id="urlvalue" type="text" size="120"/><span class="clicker">find stuff!</span></div>
 		<div class="item w2">
 			<div id="imageholder"></div>
