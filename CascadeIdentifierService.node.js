@@ -42,7 +42,10 @@ server.route('*', {
     var results = {foo : imageUrl};
     var tempname = "tmp"+Date.now()+ Math.random();
 
-		if(req.url.match(/index\.html/i) || req.url.match(/raphael-min\.js/)){
+		if(req.url.match(/index\.html/i)
+      || req.url.match(/raphael-min\.js/)
+      || req.url.match(/index2\.html/i)
+			|| req.url.match(/masonry\.pkgd\.min\.js/)){
 			if(!query.action){
 			  // this is doing it client-side
 			  sendFile(parsed.pathname, query, res);
