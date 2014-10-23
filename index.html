@@ -16,6 +16,9 @@
 .item.w4 { width: 100%; }
 </style>
 <script>
+
+var app_path = "cascader/";
+
 $(document).ready(function() {
 
 
@@ -65,7 +68,7 @@ $(document).ready(function() {
 			var realthis = this;
 			$(".clicker").click(function(){
 				var url=$("#urlvalue").val();
-				var path = "/?imageurl="+encodeURIComponent(url);
+				var path = app_path + "?imageurl="+encodeURIComponent(url);
 				realthis.setImageInPaper(url, function(queueImage){
 					console.log(realthis.paper.scaleFactor);
 					realthis.callCascader(path, function(data){
@@ -76,7 +79,7 @@ $(document).ready(function() {
 		},
 
  		setupStartingImage : function(callback){
-			var path = "/?imageurl="+encodeURIComponent(this.initialImageUrl);
+			var path = app_path + "?imageurl="+encodeURIComponent(this.initialImageUrl);
 			var realthis = this;
 			this.setImageInPaper(this.initialImageUrl, function(queueImage){
 				console.log(realthis.paper.scaleFactor);
@@ -103,9 +106,8 @@ $(document).ready(function() {
 				checkids.push(checkid);
 				rects[checkid] = [];
 				if(num_matches > 0){
-					var control = $("<span id='"+idname+"' class='control'>"+key+" ("+num_matches+")</span>");
-					var controlCheck = $("<input id='"+checkid+"' type='checkbox' />");
-					$(".controls").append(controlCheck).append(control).append("<BR>");
+					var control = $("<span id='"+checkid+"' class='control'>"+key+"("+num_matches+") </span>");
+					$(".controls").append(control);
 				}
 				if(key != "_links"){
 //				if(key == "smile"){
@@ -123,13 +125,35 @@ $(document).ready(function() {
 						rect.attr("fill", "#5f5");
 						rect.attr("fill-opacity",".2");
 						rect.toFront();
-						rect.show();
+						rect.hide();
 						rects[checkid].push(rect);
 					}
 				}
 			}
 			for(checkidi in checkids){
 				var checkid = checkids[checkidi];
+				$("#"+checkid).data("clickedon", false);
+				(function(_checkid){
+					$(document).on("click", "#"+_checkid, function(){
+						$("#"+_checkid).data('clickedon', !$("#"+_checkid).data('clickedon'));
+						if($("#"+_checkid).data('clickedon') ){
+							$(this).css("font-weight","Bold");
+						}else{
+							$(this).css("font-weight","Normal");
+						}
+					});
+					$(document).on("mouseover", "#"+_checkid, function(){
+						$(this).css("font-weight","Bold");
+					});
+					$(document).on("mouseout", "#"+_checkid, function(){
+						if(!$("#"+_checkid).data('clickedon') ){
+							$(this).css("font-weight","Normal");
+						}else{
+							console.log("not hiding");
+						}
+					});
+				})(checkid);
+
 				for(recti in rects[checkid]){
 					var rectx = rects[checkid][recti];
 					realthis.attachRectToController(rectx.id, checkid);
@@ -140,13 +164,18 @@ $(document).ready(function() {
 
 		attachRectToController : function (rectid, checkid){
 			var realthis = this;
-			$(document).on("change", "#"+checkid, function(){
+
+			$(document).on("mouseover", "#"+checkid, function(){
 				var _rect= realthis.paper.getById(rectid);
-				if($("#"+checkid).is(':checked') ){
-					_rect.show();
-					_rect.toFront();
-				}else{
+				_rect.show();
+			});
+			$(document).on("mouseout", "#"+checkid, function(){
+				console.log(checkid + $("#"+checkid).data('clickedon'));
+
+				if(!$("#"+checkid).data('clickedon') ){
+					var _rect= realthis.paper.getById(rectid);
 					_rect.hide();
+				}else{
 				}
 			});
 
